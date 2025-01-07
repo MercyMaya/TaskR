@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">TaskR</string>
+    <string name="email_hint">Email Hint</string>
+    <string name="app_logo">App Logo</string>
+    <string name="password_hint">Password Hint</string>
+    <string name="login">Login</string>
+    <string name="sign_up_prompt">Sign Up</string>
+</resources>
