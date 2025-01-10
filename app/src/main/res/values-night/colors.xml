@@ -7,7 +7,7 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
-    <color name="colorBackground">#FFFFFF</color>
-    <color name="colorPrimaryText">#1F1F1F</color> <!-- Dark gray -->
-    <color name="colorSecondaryText">#757575</color> <!-- Light gray -->
+    <color name="colorBackground">#121212</color> <!-- Dark background -->
+    <color name="colorPrimaryText">#E0E0E0</color> <!-- Light gray for text -->
+    <color name="colorSecondaryText">#B3B3B3</color> <!-- Medium gray -->
 </resources>
