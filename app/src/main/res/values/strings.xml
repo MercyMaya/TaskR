@@ -5,4 +5,14 @@
     <string name="password_hint">Password Hint</string>
     <string name="login">Login</string>
     <string name="sign_up_prompt">Sign Up</string>
+    <string name="password_strength_placeholder">Password strength: </string>
+    <string name="email_helper">Enter a valid email address.</string>
+    <string name="hint_email">Email</string>
+    <string name="hint_password">Password</string>
+    <string name="button_register">Register</string>
+    <string name="password_helper">Password must meet the following requirements:</string>
+    <string name="requirement_length">- At least 8 characters</string>
+    <string name="requirement_uppercase">- At least one uppercase letter</string>
+    <string name="requirement_lowercase">- At least one lowercase letter</string>
+    <string name="requirement_number">- At least one number</string>
 </resources>

@@ -11,3 +11,9 @@ data class User(
     val name: String,
     val email: String
 )
+
+data class ApiResponse(
+    val success: Boolean, // Indicates whether the operation was successful
+    val message: String,  // Provides a message for the user
+    val data: Any? = null // Optional field for additional data (e.g., user details, token)
+)

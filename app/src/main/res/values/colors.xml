@@ -10,4 +10,7 @@
     <color name="colorBackground">#FFFFFF</color>
     <color name="colorPrimaryText">#1F1F1F</color> <!-- Dark gray -->
     <color name="colorSecondaryText">#757575</color> <!-- Light gray -->
+    <color name="red">#FF0000</color>
+    <color name="orange">#FFA500</color>
+    <color name="green">#008000</color>
 </resources>

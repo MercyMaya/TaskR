@@ -1,5 +1,6 @@
 package com.mercymayagames.taskr
 
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
@@ -17,9 +18,22 @@ class LoginActivity : AppCompatActivity() {
     private lateinit var passwordInput: TextInputEditText
     private lateinit var loginButton: Button
     private lateinit var signUpLink: TextView
+    private val sharedPrefName = "TaskRPreferences"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Check if the user is already logged in
+        val sharedPreferences = getSharedPreferences(sharedPrefName, Context.MODE_PRIVATE)
+        val isLoggedIn = sharedPreferences.getBoolean("isLoggedIn", false)
+        if (isLoggedIn) {
+            // Redirect to MainActivity
+            val intent = Intent(this, MainActivity::class.java)
+            startActivity(intent)
+            finish()
+            return
+        }
+
         setContentView(R.layout.activity_login)
 
         emailInput = findViewById(R.id.emailInput)
@@ -55,6 +69,13 @@ class LoginActivity : AppCompatActivity() {
         loginCall.enqueue(object : Callback<LoginResponse> {
             override fun onResponse(call: Call<LoginResponse>, response: Response<LoginResponse>) {
                 if (response.isSuccessful && response.body()?.success == true) {
+                    // Save login state to SharedPreferences
+                    val sharedPreferences = getSharedPreferences(sharedPrefName, Context.MODE_PRIVATE)
+                    val editor = sharedPreferences.edit()
+                    editor.putBoolean("isLoggedIn", true)
+                    editor.putString("email", email) // Save email for future use
+                    editor.apply()
+
                     // Navigate to the main app (Task List Screen)
                     Toast.makeText(this@LoginActivity, "Login Successful", Toast.LENGTH_SHORT).show()
                     val intent = Intent(this@LoginActivity, MainActivity::class.java)
