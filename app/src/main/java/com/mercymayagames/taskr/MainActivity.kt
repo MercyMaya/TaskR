@@ -6,9 +6,12 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.mercymayagames.taskr.ui.theme.TaskRTheme
@@ -19,29 +22,86 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             TaskRTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
-                }
+                TaskRApp()
             }
         }
     }
 }
 
 @Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
+fun TaskRApp() {
+    var selectedTab by remember { mutableStateOf(MainScreenTabs.Tasks) }
+
+    Scaffold(
+        modifier = Modifier.fillMaxSize(),
+        bottomBar = {
+            BottomNavigationBar(
+                selectedTab = selectedTab,
+                onTabSelected = { selectedTab = it }
+            )
+        }
+    ) { innerPadding ->
+        when (selectedTab) {
+            MainScreenTabs.Tasks -> TaskListScreen(modifier = Modifier.padding(innerPadding))
+            MainScreenTabs.Completed -> CompletedTasksScreen(modifier = Modifier.padding(innerPadding))
+            MainScreenTabs.Settings -> SettingsScreen(modifier = Modifier.padding(innerPadding))
+        }
+    }
+}
+
+@Composable
+fun BottomNavigationBar(
+    selectedTab: MainScreenTabs,
+    onTabSelected: (MainScreenTabs) -> Unit
+) {
+    NavigationBar {
+        MainScreenTabs.entries.forEach { tab ->
+            NavigationBarItem(
+                icon = { tab.icon() },
+                label = { Text(tab.title) },
+                selected = selectedTab == tab,
+                onClick = { onTabSelected(tab) }
+            )
+        }
+    }
+}
+
+enum class MainScreenTabs(val title: String, val icon: @Composable () -> Unit) {
+    Tasks(
+        title = "Tasks",
+        icon = { Icon(Icons.AutoMirrored.Filled.List, contentDescription = null) }
+    ),
+    Completed(
+        title = "Completed",
+        icon = { Icon(Icons.Filled.Check, contentDescription = null) }
+    ),
+    Settings(
+        title = "Settings",
+        icon = { Icon(Icons.Filled.Settings, contentDescription = null) }
+    )
+}
+
+
+@Composable
+fun CompletedTasksScreen(modifier: Modifier = Modifier) {
     Text(
-        text = "Hello $name!",
+        text = "Completed Tasks Screen",
+        modifier = modifier
+    )
+}
+
+@Composable
+fun SettingsScreen(modifier: Modifier = Modifier) {
+    Text(
+        text = "Settings Screen",
         modifier = modifier
     )
 }
 
 @Preview(showBackground = true)
 @Composable
-fun GreetingPreview() {
+fun TaskRAppPreview() {
     TaskRTheme {
-        Greeting("Android")
+        TaskRApp()
     }
 }
