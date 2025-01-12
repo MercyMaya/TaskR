@@ -1,6 +1,9 @@
 package com.mercymayagames.taskr
 
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -53,62 +56,77 @@ fun TaskListScreen(modifier: Modifier = Modifier) {
         },
         modifier = modifier
     ) { innerPadding ->
-        Box(Modifier.fillMaxSize()) {
-            Column(modifier = Modifier.padding(innerPadding)) {
+        Box(
+            Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+        ) {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(), // Make the entire column scrollable
+                contentPadding = PaddingValues(bottom = 120.dp) // Space for the undo button
+            ) {
                 Priority.entries.forEach { priority ->
-                    val tasksForPriority = tasks.filter { it.priority == priority }
+                    val tasksForPriority = tasks.filter { it.priority == priority && !it.isCompleted }
                     if (tasksForPriority.isNotEmpty()) {
-                        PriorityHeader(priority)
-                        LazyColumn {
-                            itemsIndexed(tasksForPriority, key = { _, task -> task.id }) { _, task ->
-                                TaskCard(
-                                    task = task,
-                                    onExpand = {
-                                        tasks = tasks.map {
-                                            if (it.id == task.id) it.copy(isExpanded = !it.isExpanded) else it
+                        item {
+                            PriorityHeader(priority) // Add priority header
+                        }
+                        itemsIndexed(tasksForPriority, key = { _, task -> task.id }) { _, task ->
+                            TaskCard(
+                                task = task,
+                                onExpand = {
+                                    tasks = tasks.map {
+                                        if (it.id == task.id) it.copy(isExpanded = !it.isExpanded) else it
+                                    }
+                                },
+                                onEdit = {
+                                    editingTask = it
+                                    showDialog = true
+                                },
+                                onComplete = { completed ->
+                                    tasks = tasks.map {
+                                        if (it.id == task.id) it.copy(isCompleted = completed) else it
+                                    }
+                                    lastSwipedTask = if (completed) task else null
+                                    showUndoMessage = completed
+                                    if (completed) {
+                                        scope.launch {
+                                            delay(5000)
+                                            showUndoMessage = false
                                         }
-                                    },
-                                    onEdit = {
-                                        editingTask = it
-                                        showDialog = true
-                                    },
-                                    onComplete = { completed ->
-                                        println("Swipe detected: $completed") // Debug log
-                                        tasks = tasks.map {
-                                            if (it.id == task.id) it.copy(isCompleted = completed) else it
-                                        }
-                                        lastSwipedTask = if (completed) task else null
-                                        showUndoMessage = completed
-                                        if (completed) {
-                                            scope.launch {
-                                                delay(5000)
-                                                showUndoMessage = false
-                                            }
-                                        }
-                                    },
-                                    modifier = Modifier.fillMaxWidth().padding(8.dp)
-                                )
-                            }
+                                    }
+                                },
+                                modifier = Modifier.fillMaxWidth().padding(8.dp)
+                            )
                         }
                     }
                 }
             }
 
-            if (showUndoMessage) {
-                Text(
-                    text = "Undo",
-                    modifier = Modifier
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
-                        .clickable {
-                            lastSwipedTask?.let {
-                                tasks = tasks.map { t ->
-                                    if (t.id == it.id) t.copy(isCompleted = false) else t
-                                }
+            // Undo Button
+            AnimatedVisibility(
+                visible = showUndoMessage,
+                enter = fadeIn(),
+                exit = fadeOut(),
+                modifier = Modifier
+                    .align(Alignment.BottomCenter) // Position at the bottom center
+                    .padding(bottom = 72.dp) // Ensure it's above the bottom navigation bar
+            ) {
+                Button(
+                    onClick = {
+                        lastSwipedTask?.let {
+                            tasks = tasks.map { t ->
+                                if (t.id == it.id) t.copy(isCompleted = false) else t
                             }
-                            showUndoMessage = false
-                        },
-                    style = MaterialTheme.typography.bodyMedium
-                )
+                        }
+                        showUndoMessage = false
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.secondary // Contrasting color
+                    )
+                ) {
+                    Text("Undo")
+                }
             }
         }
 
@@ -131,6 +149,9 @@ fun TaskListScreen(modifier: Modifier = Modifier) {
         }
     }
 }
+
+
+
 
 @Composable
 fun PriorityHeader(priority: Priority) {
