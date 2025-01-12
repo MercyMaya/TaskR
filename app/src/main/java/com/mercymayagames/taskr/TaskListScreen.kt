@@ -151,8 +151,6 @@ fun TaskListScreen(modifier: Modifier = Modifier) {
 }
 
 
-
-
 @Composable
 fun PriorityHeader(priority: Priority) {
     Text(
