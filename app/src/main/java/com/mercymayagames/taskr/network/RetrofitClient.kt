@@ -12,31 +12,20 @@ import retrofit2.http.*
 //      in isCompletedInt, and then isCompleted is derived.
 data class Task(
     val id: Int,
-
-    @SerializedName("user_id")
-    val userId: Int,
-
+    @SerializedName("user_id") val userId: Int,
     val title: String,
-    val description: String?,        // text can be null if desired
-    val priority: String,           // e.g. "HIGH", "MEDIUM", or "LOW"
-
-    @SerializedName("due_date")
-    val dueDate: String?,           // can be null if you don't always set it
-
-    @SerializedName("order")
-    val order: Int,                 // the task's ordering
-
-    @SerializedName("is_completed")
-    val isCompletedInt: Int,        // 0 or 1 coming from the server
-
-    @SerializedName("created_at")
-    val createdAt: String?          // might be something like "2025-01-13 03:59:40"
+    val description: String?,
+    val priority: String,
+    @SerializedName("due_date") val dueDate: String?,
+    @SerializedName("order") val order: Int,
+    @SerializedName("is_completed") val isCompletedInt: Int,
+    @SerializedName("created_at") val createdAt: String?,
+    @SerializedName("completed_at") val completedAt: String?, // Add this field
+    @SerializedName("is_deleted") val isDeleted: Int // Add this field (0 = false, 1 = true)
 ) {
-    // This derived property makes it easier to handle
-    // the "isCompleted" concept in your UI code.
-    val isCompleted: Boolean
-        get() = (isCompletedInt == 1)
+    val isCompleted: Boolean get() = isCompletedInt == 1
 }
+
 
 // 2) Your Retrofit interface with updated calls.
 interface TaskApiService {
@@ -65,7 +54,24 @@ interface TaskApiService {
         @Field("task_id") taskId: Int,
         @Field("is_completed") isCompleted: Int
     )
+
+    @FormUrlEncoded
+    @POST("delete_task.php")
+    suspend fun deleteTask(@Field("task_id") taskId: Int)
+
+    @FormUrlEncoded
+    @POST("update_task.php")
+    suspend fun updateTask(
+        @Field("task_id") taskId: Int,
+        @Field("title") title: String,
+        @Field("description") description: String?,
+        @Field("priority") priority: String
+    )
+
+
 }
+
+
 
 // 3) The Retrofit singleton with logging and JSON conversion.
 object RetrofitClient {

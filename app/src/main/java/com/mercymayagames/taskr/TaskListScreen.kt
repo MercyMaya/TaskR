@@ -1,5 +1,6 @@
 package com.mercymayagames.taskr
 
+import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -10,6 +11,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.clickable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DragIndicator
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
@@ -38,6 +40,8 @@ data class LocalTask(
     var priority: Priority,
     var order: Int,
     var isCompleted: Boolean,
+    val isDeleted: Boolean = false,
+    val completedAt: String? = null,
     var isExpanded: Boolean = false
 )
 
@@ -102,7 +106,6 @@ fun TaskListScreen(modifier: Modifier = Modifier) {
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(bottom = 120.dp)
                 ) {
-                    // Group tasks by priority, but skip those that are completed
                     Priority.entries.toList().forEach { priority ->
                         val tasksForPriority = tasks.filter {
                             it.priority == priority && !it.isCompleted
@@ -115,7 +118,7 @@ fun TaskListScreen(modifier: Modifier = Modifier) {
                                 Box(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .heightIn(max = 400.dp) // optional height limit
+                                        .heightIn(max = 400.dp)
                                 ) {
                                     PriorityGroup(
                                         priority = priority,
@@ -124,7 +127,6 @@ fun TaskListScreen(modifier: Modifier = Modifier) {
                                         onShowDialog = { showDialog = it },
                                         onSetEditingTask = { editingTask = it },
                                         onSwipeComplete = { swipedTask ->
-                                            // This triggers after a successful swipe completion
                                             lastSwipedTask = swipedTask
                                             showUndoMessage = true
                                             scope.launch {
@@ -140,7 +142,6 @@ fun TaskListScreen(modifier: Modifier = Modifier) {
                 }
             }
 
-            // The "Undo" message for a swiped/completed task
             AnimatedVisibility(
                 visible = showUndoMessage,
                 enter = fadeIn(),
@@ -154,14 +155,12 @@ fun TaskListScreen(modifier: Modifier = Modifier) {
                         lastSwipedTask?.let { swiped ->
                             scope.launch {
                                 try {
-                                    // Mark the task as incomplete again on the server
                                     taskService.updateTaskStatus(
                                         taskId = swiped.id,
-                                        isCompleted = 0 // 0 = false
+                                        isCompleted = 0
                                     )
-                                    // Update local state
-                                    tasks = tasks.map { t ->
-                                        if (t.id == swiped.id) t.copy(isCompleted = false) else t
+                                    tasks = tasks.map {
+                                        if (it.id == swiped.id) it.copy(isCompleted = false) else it
                                     }
                                 } catch (e: Exception) {
                                     e.printStackTrace()
@@ -169,52 +168,64 @@ fun TaskListScreen(modifier: Modifier = Modifier) {
                             }
                         }
                         showUndoMessage = false
-                    },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.secondary
-                    )
+                    }
                 ) {
                     Text("Undo")
                 }
             }
         }
 
-        // Dialog for adding/editing a task
         if (showDialog) {
             AddEditTaskDialog(
                 task = editingTask,
                 onDismiss = { showDialog = false },
-                onSave = { newOrUpdated ->
+                onSave = { newTask ->
+                    // Add Debug Logging Here
                     scope.launch {
                         try {
                             if (editingTask == null) {
-                                // If it's a brand new task
+                                // Log for Adding a Task
+                                Log.d("AddEditTaskDialog", "Adding Task: $newTask")
                                 taskService.addTask(
                                     userId = 1,
-                                    title = newOrUpdated.title,
-                                    description = newOrUpdated.description,
-                                    priority = newOrUpdated.priority.name,
+                                    title = newTask.title,
+                                    description = newTask.description,
+                                    priority = newTask.priority.name,
                                     dueDate = "2025-01-12"
                                 )
-                                // Re-fetch tasks from the server to get the actual task ID
-                                val updatedTasks = taskService.getTasks(userId = 1)
-                                tasks = updatedTasks.map {
-                                    LocalTask(
-                                        id = it.id,
-                                        title = it.title,
-                                        description = it.description,
-                                        priority = Priority.valueOf(it.priority.uppercase()),
-                                        order = it.order,
-                                        isCompleted = it.isCompleted
-                                    )
-                                }
                             } else {
-                                // If editing an existing task, update only locally for now
-                                tasks = tasks.map {
-                                    if (it.id == newOrUpdated.id) newOrUpdated else it
-                                }
-                                // Optionally, call a real "updateTask" endpoint if you have one
+                                // Log for Updating a Task
+                                Log.d("AddEditTaskDialog", "Updating Task: $newTask")
+                                taskService.updateTask(
+                                    taskId = newTask.id,
+                                    title = newTask.title,
+                                    description = newTask.description,
+                                    priority = newTask.priority.name
+                                )
                             }
+                            // Refresh Task List
+                            tasks = taskService.getTasks(userId = 1).map {
+                                LocalTask(
+                                    id = it.id,
+                                    title = it.title,
+                                    description = it.description,
+                                    priority = Priority.valueOf(it.priority.uppercase()),
+                                    order = it.order,
+                                    isCompleted = it.isCompleted
+                                )
+                            }
+                        } catch (e: Exception) {
+                            Log.e("AddEditTaskDialog", "Error in onSave", e)
+                        } finally {
+                            showDialog = false
+                        }
+                    }
+                },
+                onDelete = {
+                    scope.launch {
+                        try {
+                            taskService.deleteTask(taskId = editingTask?.id ?: 0)
+                            tasks = tasks.filter { it.id != editingTask?.id }
                         } catch (e: Exception) {
                             e.printStackTrace()
                         } finally {
@@ -222,9 +233,9 @@ fun TaskListScreen(modifier: Modifier = Modifier) {
                         }
                     }
                 }
-
             )
         }
+
     }
 }
 
@@ -237,7 +248,6 @@ fun PriorityGroup(
     onSetEditingTask: (LocalTask?) -> Unit,
     onSwipeComplete: (LocalTask) -> Unit
 ) {
-    // Filter tasks for this priority, excluding completed tasks
     val tasksForPriority = tasks.filter { it.priority == priority && !it.isCompleted }
         .sortedBy { it.order }
 
@@ -248,7 +258,7 @@ fun PriorityGroup(
             val currentList = tasks.toMutableList()
             val subIndices = currentList
                 .withIndex()
-                .filter { it.value.priority == priority && !it.value.isCompleted }
+                .filter { indexedTask -> indexedTask.value.priority == priority && !indexedTask.value.isCompleted }
                 .map { it.index }
 
             if (from.index in subIndices.indices && to.index in subIndices.indices) {
@@ -258,7 +268,6 @@ fun PriorityGroup(
                 val movingTask = currentList.removeAt(fromGlobalIndex)
                 currentList.add(toGlobalIndex, movingTask)
 
-                // Reassign 'order' for tasks of this priority
                 currentList
                     .filter { it.priority == priority && !it.isCompleted }
                     .forEachIndexed { i, task -> task.order = i }
@@ -280,56 +289,39 @@ fun PriorityGroup(
                 TaskCard(
                     task = task,
                     onExpand = {
-                        // Toggle expansion
-                        onTasksChanged(
-                            tasks.map {
-                                if (it.id == task.id) it.copy(isExpanded = !it.isExpanded)
-                                else it
-                            }
-                        )
+                        val updatedTasks = tasks.map { t ->
+                            t.copy(isExpanded = t.id == task.id && !t.isExpanded)
+                        }
+                        onTasksChanged(updatedTasks)
                     },
-                    onEdit = {
-                        onSetEditingTask(it)
-                        onShowDialog(true)
-                    },
+                    onEdit = { onSetEditingTask(it); onShowDialog(true) },
                     onComplete = { completed ->
-                        // Update the local list
-                        onTasksChanged(
-                            tasks.map {
-                                if (it.id == task.id) it.copy(isCompleted = completed) else it
-                            }
-                        )
+                        val updatedTasks = tasks.map {
+                            if (it.id == task.id) it.copy(isCompleted = completed) else it
+                        }
+                        onTasksChanged(updatedTasks)
                         if (completed) onSwipeComplete(task)
                     },
                     isDragged = isDragging,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    isCompletedScreen = false
                 )
             }
         }
     }
 }
 
-@Composable
-fun PriorityHeader(priority: Priority) {
-    Text(
-        text = when (priority) {
-            Priority.HIGH -> "High Priority"
-            Priority.MEDIUM -> "Medium Priority"
-            Priority.LOW -> "Low Priority"
-        },
-        style = MaterialTheme.typography.titleLarge,
-        modifier = Modifier.padding(16.dp)
-    )
-}
 
 @Composable
 fun TaskCard(
+    modifier: Modifier = Modifier,
     task: LocalTask,
     onExpand: () -> Unit,
-    onEdit: (LocalTask) -> Unit,
-    onComplete: (Boolean) -> Unit,
-    isDragged: Boolean,
-    modifier: Modifier = Modifier
+    onEdit: (LocalTask) -> Unit = {},
+    onComplete: (Boolean) -> Unit = {},
+    onDelete: () -> Unit = {},
+    isDragged: Boolean = false,
+    isCompletedScreen: Boolean = false
 ) {
     val swipeThreshold = 50f
     val taskService = RetrofitClient.instance
@@ -337,21 +329,21 @@ fun TaskCard(
 
     Card(
         modifier = modifier
-            // Detect horizontal drag (swipe to complete)
+            .padding(8.dp)
             .pointerInput(Unit) {
-                detectHorizontalDragGestures { _, dragAmount ->
-                    // Swipe right beyond threshold => mark complete
-                    if (dragAmount > swipeThreshold && !task.isCompleted) {
-                        scope.launch {
-                            try {
-                                // Mark as completed (1) on the server
-                                taskService.updateTaskStatus(
-                                    taskId = task.id,
-                                    isCompleted = 1
-                                )
-                                onComplete(true)
-                            } catch (e: Exception) {
-                                e.printStackTrace()
+                if (!isCompletedScreen) {
+                    detectHorizontalDragGestures { _, dragAmount ->
+                        if (dragAmount > swipeThreshold && !task.isCompleted) {
+                            scope.launch {
+                                try {
+                                    taskService.updateTaskStatus(
+                                        taskId = task.id,
+                                        isCompleted = 1
+                                    )
+                                    onComplete(true)
+                                } catch (e: Exception) {
+                                    e.printStackTrace()
+                                }
                             }
                         }
                     }
@@ -380,23 +372,14 @@ fun TaskCard(
                 modifier = Modifier.weight(1f)
             ) {
                 Row(
-                    horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(
-                        text = task.title,
-                        style = MaterialTheme.typography.titleMedium,
-                        maxLines = if (task.isExpanded) Int.MAX_VALUE else 1,
-                        overflow = if (task.isExpanded) TextOverflow.Visible else TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f)
-                    )
                     Checkbox(
                         checked = task.isCompleted,
                         onCheckedChange = { checked ->
                             scope.launch {
                                 try {
-                                    // Update the server with 0 or 1
                                     taskService.updateTaskStatus(
                                         taskId = task.id,
                                         isCompleted = if (checked) 1 else 0
@@ -408,16 +391,20 @@ fun TaskCard(
                             }
                         }
                     )
+                    Text(
+                        text = task.title,
+                        style = MaterialTheme.typography.titleMedium,
+                        maxLines = if (task.isExpanded) Int.MAX_VALUE else 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
                 }
                 if (task.isExpanded) {
                     Spacer(modifier = Modifier.height(8.dp))
-                    task.description?.let {
-                        Text(
-                            text = it,
-                            style = MaterialTheme.typography.bodyMedium,
-                            modifier = Modifier.padding(bottom = 8.dp)
-                        )
-                    }
+                    Text(
+                        text = task.description ?: "No Description",
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
                     Row(
                         horizontalArrangement = Arrangement.End,
                         modifier = Modifier.fillMaxWidth()
@@ -426,6 +413,12 @@ fun TaskCard(
                             Icon(
                                 imageVector = Icons.Filled.Edit,
                                 contentDescription = "Edit Task"
+                            )
+                        }
+                        IconButton(onClick = { onDelete() }) {
+                            Icon(
+                                imageVector = Icons.Filled.Delete,
+                                contentDescription = "Delete Task"
                             )
                         }
                     }
@@ -439,16 +432,40 @@ fun TaskCard(
 fun AddEditTaskDialog(
     task: LocalTask?,
     onDismiss: () -> Unit,
-    onSave: (LocalTask) -> Unit
+    onSave: (LocalTask) -> Unit,
+    onDelete: (() -> Unit)? = null
 ) {
     var title by remember { mutableStateOf(task?.title ?: "") }
     var description by remember { mutableStateOf(task?.description ?: "") }
     var priority by remember { mutableStateOf(task?.priority ?: Priority.MEDIUM) }
+    var showDeleteConfirmation by remember { mutableStateOf(false) }
+
+    if (showDeleteConfirmation) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirmation = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    onDelete?.invoke()
+                    showDeleteConfirmation = false
+                }) {
+                    Text("Delete")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirmation = false }) {
+                    Text("Cancel")
+                }
+            },
+            title = { Text("Confirm Delete") },
+            text = { Text("Are you sure you want to delete this task? This action cannot be undone.") }
+        )
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
             TextButton(onClick = {
+                // Add Save Logic Here
                 onSave(
                     LocalTask(
                         id = task?.id ?: 0,
@@ -490,7 +507,7 @@ fun AddEditTaskDialog(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text("Priority:")
-                    Priority.entries.forEach { p ->
+                    Priority.values().forEach { p ->
                         TextButton(onClick = { priority = p }) {
                             Text(
                                 text = p.name,
@@ -504,8 +521,33 @@ fun AddEditTaskDialog(
                         }
                     }
                 }
+                if (task != null) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Button(
+                        onClick = { showDeleteConfirmation = true },
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                    ) {
+                        Text("Delete Task")
+                    }
+                }
             }
         }
+    )
+}
+
+
+
+
+@Composable
+fun PriorityHeader(priority: Priority) {
+    Text(
+        text = when (priority) {
+            Priority.HIGH -> "High Priority"
+            Priority.MEDIUM -> "Medium Priority"
+            Priority.LOW -> "Low Priority"
+        },
+        style = MaterialTheme.typography.titleLarge,
+        modifier = Modifier.padding(16.dp)
     )
 }
 

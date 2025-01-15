@@ -81,13 +81,6 @@ enum class MainScreenTabs(val title: String, val icon: @Composable () -> Unit) {
     )
 }
 
-@Composable
-fun CompletedTasksScreen(modifier: Modifier = Modifier) {
-    Text(
-        text = "Completed Tasks Screen",
-        modifier = modifier
-    )
-}
 
 @Composable
 fun SettingsScreen(modifier: Modifier = Modifier) {
