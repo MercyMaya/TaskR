@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import com.mercymayagames.taskr.R
+import androidx.appcompat.app.AppCompatDelegate
 import com.mercymayagames.taskr.databinding.ActivityMainBinding
 import com.mercymayagames.taskr.ui.main.fragments.CompletedTasksFragment
 import com.mercymayagames.taskr.ui.main.fragments.SettingsFragment
