@@ -47,13 +47,15 @@ class LoginActivity : AppCompatActivity() {
         // Initialize views
         etEmail = findViewById(R.id.etEmail)
         etPassword = findViewById(R.id.etPassword)
-        ivShowPassword = findViewById(R.id.ivShowPassword)
+      //  ivShowPassword = findViewById(R.id.ivShowPassword)
         btnLogin = findViewById(R.id.btnLogin)
         tvRegister = findViewById(R.id.tvRegister)
 
         /**
          * In the following lines, we handle toggling of password visibility.
-         */
+         * Okay... look... apparently the materials library does this for us. We...
+         * spent a LOT of time doing things we didn't need to.
+
         ivShowPassword.setOnClickListener {
             isPasswordVisible = !isPasswordVisible
             if (isPasswordVisible) {
@@ -65,7 +67,7 @@ class LoginActivity : AppCompatActivity() {
             }
             etPassword.setSelection(etPassword.text.length)
         }
-
+        */
         btnLogin.setOnClickListener {
             val email = etEmail.text.toString().trim()
             val password = etPassword.text.toString().trim()

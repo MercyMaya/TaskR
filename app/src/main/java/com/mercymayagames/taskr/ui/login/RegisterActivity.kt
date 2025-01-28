@@ -40,7 +40,7 @@ class RegisterActivity : AppCompatActivity() {
         etUsername = findViewById(R.id.etUsername)
         etEmail = findViewById(R.id.etEmail)
         etPassword = findViewById(R.id.etPassword)
-        ivShowPassword = findViewById(R.id.ivShowPassword)
+      //  ivShowPassword = findViewById(R.id.ivShowPassword)
         btnRegister = findViewById(R.id.btnRegister)
 
         tvReqLength = findViewById(R.id.tvReqLength)
@@ -49,7 +49,7 @@ class RegisterActivity : AppCompatActivity() {
 
         /**
          * In the following lines, we handle toggling password visibility for better accessibility.
-         */
+         * Yup, here too. We never needed to write this out.
         ivShowPassword.setOnClickListener {
             isPasswordVisible = !isPasswordVisible
             if (isPasswordVisible) {
@@ -61,6 +61,7 @@ class RegisterActivity : AppCompatActivity() {
             }
             etPassword.setSelection(etPassword.text.length)
         }
+         */
 
         /**
          * In the following lines, we add a text watcher to dynamically check password requirements.
