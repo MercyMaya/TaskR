@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Dark Mode Colors -->
+    <color name="futuristicBackground">#202030</color>
+    <color name="futuristicBackgroundDark">#101020</color>
+    <color name="futuristicCardBackground">#2A2A44</color>
+    <color name="futuristicCardBackgroundDark">#1F1F2F</color>
+
+    <color name="highContrastText">#FFFFFF</color>
+
+    <!-- Bottom Nav Selected vs Unselected (Dark) -->
+    <color name="bottom_nav_selected">#FFBB00</color>
+    <color name="bottom_nav_unselected">#666666</color>
+
+    <!-- Password requirement states -->
+    <color name="requirementMet">#00FF00</color>
+    <color name="requirementNotMet">#FF0000</color>
+
+    <!-- Priority Outline Colors -->
+    <color name="priorityHighOutline">#FF0000</color>     <!-- Red -->
+    <color name="priorityNormalOutline">#FFFF00</color>   <!-- Yellow -->
+    <color name="priorityLowOutline">#00FF00</color>      <!-- Green -->
+</resources>

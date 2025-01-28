@@ -46,6 +46,7 @@ class TasksFragment : Fragment() {
         sharedPrefManager = SharedPrefManager(requireContext())
 
         // Setup RecyclerView with our custom adapter
+        // We must now pass onDeleteTaskRequested and isCompletedScreen:
         taskAdapter = TaskAdapter(
             tasks = taskList,
             context = requireContext(),
@@ -54,9 +55,17 @@ class TasksFragment : Fragment() {
                 updateTaskCompletion(task, isChecked)
             },
             onEditTaskRequested = { task ->
-                // Show dialog to edit title, description, and priority
+                // Show dialog to edit title, description, priority
                 showEditTaskDialog(task)
-            }
+            },
+            onDeleteTaskRequested = {
+                /**
+                 * We do nothing here since active tasks
+                 * can't be deleted from the active screen
+                 * in this design. So it's an empty lambda.
+                 */
+            },
+            isCompletedScreen = false
         )
 
         binding.rvTasks.layoutManager = LinearLayoutManager(requireContext())
@@ -265,8 +274,7 @@ class TasksFragment : Fragment() {
     private fun updateTaskOnServer(task: Task, title: String, description: String, priority: String) {
         /**
          * In the following lines, we call "update" with new title/description/priority.
-         * If the task was previously completed, the isCompleted remains the same.
-         * If it was active, we keep is_completed=0.
+         * If the task was previously completed, is_completed=1. If it was active, is_completed=0.
          */
         val userId = sharedPrefManager.getUserId()
         val call = ApiClient.apiInterface.updateTask(

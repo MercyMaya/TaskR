@@ -1,29 +1,35 @@
 package com.mercymayagames.taskr.ui.adapters
 
 import android.content.Context
+import android.graphics.drawable.GradientDrawable
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.mercymayagames.taskr.R
 import com.mercymayagames.taskr.data.model.Task
 
 /**
  * In the following adapter, we display a list of tasks with:
- * - A checkbox to mark them completed
- * - An expandable area for the description
- * - An edit icon that allows the user to update the task
+ * - A checkbox to mark them completed/incomplete
+ * - An expandable area with the description
+ * - An edit icon for modifying the task
+ * - A delete icon if this is the completed screen (where tasks can be deleted)
+ * - A stroke outline color set by the task's priority (High=Red, Normal=Yellow, Low=Green)
  */
 class TaskAdapter(
     private val tasks: MutableList<Task>,
     private val context: Context,
-    /**
-     * In the following lines, we pass callbacks to handle
-     * completed checkbox toggles and edit requests.
-     */
+    // Callback for when a task is checked/unchecked
     private val onTaskChecked: (Task, Boolean) -> Unit,
-    private val onEditTaskRequested: (Task) -> Unit
+    // Callback for when the user taps the edit icon
+    private val onEditTaskRequested: (Task) -> Unit,
+    // Callback for when user taps the delete icon
+    private val onDeleteTaskRequested: (Task) -> Unit,
+    // Flag to determine if we're in the "Completed" screen or not
+    private val isCompletedScreen: Boolean
 ) : RecyclerView.Adapter<TaskAdapter.TaskViewHolder>() {
 
     // Track which item is expanded
@@ -47,7 +53,10 @@ class TaskAdapter(
         holder.llExpandedArea.visibility = if (isExpanded) View.VISIBLE else View.GONE
         holder.tvDescription.text = task.taskDescription
 
-        // When the user checks/unchecks the checkbox, call our callback
+        // Show/hide the delete icon if this is the Completed screen
+        holder.ivDeleteTask.visibility = if (isCompletedScreen) View.VISIBLE else View.GONE
+
+        // When the user checks/unchecks the checkbox, call the callback
         holder.cbCompleted.setOnClickListener {
             onTaskChecked(task, holder.cbCompleted.isChecked)
         }
@@ -58,10 +67,29 @@ class TaskAdapter(
             notifyDataSetChanged()
         }
 
-        // The edit icon is visible in the expanded area
+        // The edit icon callback
         holder.ivEditTask.setOnClickListener {
-            // Trigger the edit callback
             onEditTaskRequested(task)
+        }
+
+        // The delete icon callback (only visible if isCompletedScreen = true)
+        holder.ivDeleteTask.setOnClickListener {
+            onDeleteTaskRequested(task)
+        }
+
+        // Dynamically set stroke color based on priority
+        // We assume itemView has background=bg_task_item.xml, which is a ShapeDrawable
+        val background = holder.itemView.background
+        if (background is GradientDrawable) {
+            val colorRes = when (task.priority) {
+                "High" -> R.color.priorityHighOutline
+                "Normal" -> R.color.priorityNormalOutline
+                "Low" -> R.color.priorityLowOutline
+                else -> android.R.color.transparent
+            }
+            val strokeColor = ContextCompat.getColor(context, colorRes)
+            // 2dp stroke width, adjust to taste
+            background.setStroke(2, strokeColor)
         }
     }
 
@@ -71,13 +99,9 @@ class TaskAdapter(
         val cbCompleted: CheckBox = itemView.findViewById(R.id.cbCompleted)
         val tvTitle: TextView = itemView.findViewById(R.id.tvTitle)
         val tvPriority: TextView = itemView.findViewById(R.id.tvPriority)
-
-        /**
-         * In the following lines, we store references to the expanded area
-         * (description & edit icon).
-         */
         val llExpandedArea: LinearLayout = itemView.findViewById(R.id.llExpandedArea)
         val tvDescription: TextView = itemView.findViewById(R.id.tvDescription)
         val ivEditTask: ImageView = itemView.findViewById(R.id.ivEditTask)
+        val ivDeleteTask: ImageView = itemView.findViewById(R.id.ivDeleteTask)
     }
 }

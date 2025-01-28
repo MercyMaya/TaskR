@@ -1,13 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="black">#FF000000</color>
-    <color name="white">#FFFFFFFF</color>
-    <color name="requirementMet">#19FF00</color>
-    <color name="requirementNotMet">#8D0400</color>
-    <color name="highContrastText">#395BBD</color>
-    <color name="futuristicBackground">#FFFFFF</color>
-    <color name="bottom_nav_selected">#9C27B0</color>
-    <color name="bottom_nav_unselected">#00BCD4</color>
+    <!-- Light Mode Colors -->
+    <color name="futuristicBackground">#F2F2F2</color>
+    <color name="futuristicBackgroundDark">#DADADA</color>
     <color name="futuristicCardBackground">#FFFFFF</color>
-    <color name="futuristicCardBackgroundDark">#A6A6A6</color>
+    <color name="futuristicCardBackgroundDark">#EAEAEA</color>
+
+    <color name="highContrastText">#000000</color>
+
+    <!-- Bottom Nav Selected vs Unselected -->
+    <color name="bottom_nav_selected">#FF5722</color>
+    <color name="bottom_nav_unselected">#888888</color>
+
+    <!-- Password requirement states -->
+    <color name="requirementMet">#388E3C</color>       <!-- greenish -->
+    <color name="requirementNotMet">#D32F2F</color>   <!-- redish -->
+
+    <!-- Priority Outline Colors -->
+    <color name="priorityHighOutline">#FF0000</color>     <!-- Red -->
+    <color name="priorityNormalOutline">#FFA000</color>   <!-- Yellowish/Orange -->
+    <color name="priorityLowOutline">#4CAF50</color>      <!-- Green -->
 </resources>

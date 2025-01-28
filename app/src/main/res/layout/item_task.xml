@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-In the following layout, we show a horizontal row containing
-a checkbox (to complete the task) and a vertical container for the text.
-Inside that container, we have a hidden "expanded area" that shows
-the task description + edit icon.
+In the following layout, we show a row with:
+- Checkbox (to mark completed/incomplete)
+- A vertical layout for Title/Priority
+- An expanded area with Description, Edit icon, and optional Delete icon
 -->
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
@@ -50,16 +50,17 @@ the task description + edit icon.
             android:textSize="14sp"
             android:paddingTop="2dp" />
 
-        <!-- Expanded area: includes description and edit icon -->
+        <!-- Expanded area: includes description, edit icon, and optional delete icon -->
         <LinearLayout
             android:id="@+id/llExpandedArea"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
+            android:gravity="center_vertical|end"
             android:visibility="gone"
             android:layout_marginTop="8dp">
 
-            <!-- Description takes up most space -->
+            <!-- Description taking up most of the space -->
             <TextView
                 android:id="@+id/tvDescription"
                 android:layout_width="0dp"
@@ -69,14 +70,26 @@ the task description + edit icon.
                 android:textColor="@color/highContrastText"
                 android:textSize="14sp" />
 
-            <!-- Edit Icon -->
+            <!-- Edit Icon (now tinted) -->
             <ImageView
                 android:id="@+id/ivEditTask"
                 android:layout_width="32dp"
                 android:layout_height="32dp"
                 android:src="@drawable/ic_edit"
                 android:layout_marginLeft="8dp"
-                android:contentDescription="@string/edit_task" />
+                android:contentDescription="@string/edit_task"
+                app:tint="@color/highContrastText" />
+
+            <!-- Delete Icon (only visible in completed screen) -->
+            <ImageView
+                android:id="@+id/ivDeleteTask"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:src="@drawable/ic_delete"
+                android:layout_marginLeft="8dp"
+                android:contentDescription="@string/delete_task"
+                android:visibility="gone"
+                app:tint="@color/highContrastText" />
         </LinearLayout>
     </LinearLayout>
 </LinearLayout>

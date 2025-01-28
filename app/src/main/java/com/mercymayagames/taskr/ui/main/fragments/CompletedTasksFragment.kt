@@ -1,10 +1,11 @@
 package com.mercymayagames.taskr.ui.main.fragments
 
+import android.R
 import android.os.Bundle
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
-import android.widget.*
+import android.view.*
+import android.widget.ArrayAdapter
+import android.widget.LinearLayout
+import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.gson.JsonObject
@@ -16,37 +17,22 @@ import com.mercymayagames.taskr.util.SharedPrefManager
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
-import android.app.AlertDialog
 
 /**
- * In the following fragment, we display tasks that are marked as completed (is_completed=1).
- * We allow the user to optionally:
- *   - "Uncheck" tasks (mark them uncompleted) to move them back to the active tasks screen.
- *   - Edit a completed task's title, description, or priority if desired.
- * There's also a "Save" button for demonstration, which you can customize or remove.
+ * In the following lines, we display completed tasks.
+ * We add a delete icon for final 'soft delete'
+ * and an optional "edit" flow that includes a delete button in the dialog.
  */
 class CompletedTasksFragment : Fragment() {
 
-    /**
-     * In the following lines, we bind to our fragment_completed_tasks.xml layout
-     * using ViewBinding.
-     */
     private var _binding: FragmentCompletedTasksBinding? = null
     private val binding get() = _binding!!
 
-    /**
-     * We maintain a mutable list of completed tasks and a TaskAdapter to display them.
-     */
     private lateinit var sharedPrefManager: SharedPrefManager
     private lateinit var taskAdapter: TaskAdapter
     private val completedTaskList = mutableListOf<Task>()
 
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
-        // Inflate using ViewBinding
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _binding = FragmentCompletedTasksBinding.inflate(inflater, container, false)
         return binding.root
     }
@@ -54,29 +40,25 @@ class CompletedTasksFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         sharedPrefManager = SharedPrefManager(requireContext())
 
-        /**
-         * In the following lines, we set up a TaskAdapter with two callbacks:
-         *  - onTaskChecked: if the user unchecks (or re-checks) a completed task
-         *  - onEditTaskRequested: if the user wants to edit the task from the completed screen
-         */
+        // Setup RecyclerView for completed tasks
         taskAdapter = TaskAdapter(
             tasks = completedTaskList,
             context = requireContext(),
+            // Checking/unchecking in completed tasks might revert them to active
             onTaskChecked = { task, isChecked ->
-                // If the user "unchecks" a completed task, we can revert is_completed=0
-                // so it returns to the active tasks screen.
-                // isChecked == false means user unchecked it in the Completed list
                 if (!isChecked) {
+                    // If user unchecks in the completed screen, we can mark is_completed=0
+                    // so it moves back to active tasks.
                     markTaskAsUncompleted(task)
                 }
-                // If isChecked is true, user effectively re-checked a completed task,
-                // which doesn't usually change anything, so we can ignore it or handle no-op.
             },
             onEditTaskRequested = { task ->
-                // If we want to let the user edit a completed task’s title/desc/priority
-                // we can show the same edit dialog used in TasksFragment.
                 showEditTaskDialog(task)
-            }
+            },
+            onDeleteTaskRequested = { task ->
+                showConfirmDeleteDialog(task)
+            },
+            isCompletedScreen = true  // so we show the delete icon
         )
 
         binding.rvCompletedTasks.layoutManager = LinearLayoutManager(requireContext())
@@ -84,22 +66,21 @@ class CompletedTasksFragment : Fragment() {
 
         /**
          * "Save" button that explicitly saves tasks that remain completed.
-         * In a real scenario, you might do a final sync operation here.
+         * In a real scenario, you might do a final sync or confirm changes.
+         * Right now, it's a placeholder that simply shows a Toast message.
          */
         binding.btnSaveCompleted.setOnClickListener {
             Toast.makeText(requireContext(), "Changes saved!", Toast.LENGTH_SHORT).show()
-            // e.g., re-fetch or confirm changes. This is a stub demonstration.
         }
 
-        // Fetch the list of completed tasks from the server
         fetchCompletedTasks()
     }
 
-    /**
-     * In the following function, we call the "fetch_completed" action on the server,
-     * which returns tasks with is_completed=1 and is_soft_deleted=0.
-     */
     private fun fetchCompletedTasks() {
+        /**
+         * In the following lines, we call the "fetch_completed" action
+         * which returns tasks where is_completed=1 and is_soft_deleted=0.
+         */
         val userId = sharedPrefManager.getUserId()
         val call = ApiClient.apiInterface.fetchCompletedTasks("fetch_completed", userId)
         call.enqueue(object : Callback<JsonObject> {
@@ -107,8 +88,8 @@ class CompletedTasksFragment : Fragment() {
                 if (response.isSuccessful && response.body() != null) {
                     val body = response.body()!!
                     if (body.get("success").asBoolean) {
-                        completedTaskList.clear()
                         val tasksJson = body.getAsJsonArray("tasks")
+                        completedTaskList.clear()
                         for (element in tasksJson) {
                             val obj = element.asJsonObject
                             val task = Task(
@@ -140,11 +121,8 @@ class CompletedTasksFragment : Fragment() {
         })
     }
 
-    /**
-     * In the following function, we revert a completed task (is_completed=1) to uncompleted (is_completed=0).
-     * This will cause it to appear again in the active tasks screen, and be removed from completed tasks.
-     */
     private fun markTaskAsUncompleted(task: Task) {
+        // Set is_completed=0 so the item moves back to active tasks
         val userId = sharedPrefManager.getUserId()
         val call = ApiClient.apiInterface.updateTask(
             action = "update",
@@ -153,20 +131,20 @@ class CompletedTasksFragment : Fragment() {
             title = task.taskTitle,
             description = task.taskDescription,
             priority = task.priority,
-            isCompleted = 0 // revert to uncompleted
+            isCompleted = 0
         )
         call.enqueue(object : Callback<JsonObject> {
             override fun onResponse(call: Call<JsonObject>, response: Response<JsonObject>) {
                 if (response.isSuccessful && response.body() != null) {
                     val body = response.body()!!
                     if (body.get("success").asBoolean) {
-                        // Re-fetch completed tasks. The "uncompleted" one won't appear anymore.
+                        // Re-fetch the completed list to remove the uncompleted item
                         fetchCompletedTasks()
                     } else {
                         Toast.makeText(requireContext(), body.get("message").asString, Toast.LENGTH_SHORT).show()
                     }
                 } else {
-                    Toast.makeText(requireContext(), "Error reverting task to uncompleted", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(requireContext(), "Error marking task uncompleted", Toast.LENGTH_SHORT).show()
                 }
             }
 
@@ -176,39 +154,53 @@ class CompletedTasksFragment : Fragment() {
         })
     }
 
-    /**
-     * In the following lines, we allow editing of a completed task’s title, description, or priority.
-     * We reuse the same dialog_add_task.xml as the "Add" dialog, but pre-fill with the task data.
-     */
     private fun showEditTaskDialog(task: Task) {
-        val dialogView = LayoutInflater.from(requireContext()).inflate(
-            com.mercymayagames.taskr.R.layout.dialog_add_task,
-            null
+        /**
+         * We reuse the same dialog_add_task.xml (or rename to dialog_edit_task if you prefer).
+         * We add a "Delete" button at the bottom only if the task is from the Completed screen.
+         */
+        val dialogView = layoutInflater.inflate(
+            com.mercymayagames.taskr.R.layout.dialog_add_task, null
         )
-        val dialog = AlertDialog.Builder(requireContext())
+        val dialog = android.app.AlertDialog.Builder(requireContext())
             .setView(dialogView)
             .create()
 
-        val etTitle = dialogView.findViewById<EditText>(com.mercymayagames.taskr.R.id.etTitle)
-        val etDescription = dialogView.findViewById<EditText>(com.mercymayagames.taskr.R.id.etDescription)
-        val spinnerPriority = dialogView.findViewById<Spinner>(com.mercymayagames.taskr.R.id.spinnerPriority)
-        val btnSave = dialogView.findViewById<Button>(com.mercymayagames.taskr.R.id.btnSave)
+        val etTitle = dialogView.findViewById<android.widget.EditText>(com.mercymayagames.taskr.R.id.etTitle)
+        val etDescription = dialogView.findViewById<android.widget.EditText>(com.mercymayagames.taskr.R.id.etDescription)
+        val spinnerPriority = dialogView.findViewById<android.widget.Spinner>(com.mercymayagames.taskr.R.id.spinnerPriority)
+        val btnSave = dialogView.findViewById<android.widget.Button>(com.mercymayagames.taskr.R.id.btnSave)
 
-        // Pre-fill existing data
+        /**
+         * We'll add a separate "Delete" button to the same layout if we want,
+         * or you can place it inside the dialog via code.
+         * For demonstration, let's create it on the fly below the save button.
+         */
+        val btnDelete = android.widget.Button(requireContext()).apply {
+            text = "DELETE"
+            setOnClickListener {
+                dialog.dismiss()
+                showConfirmDeleteDialog(task)
+            }
+        }
+
+        // Add the delete button to the linear layout that holds spinnerPriority & btnSave
+        val parentLayout = spinnerPriority.parent as ViewGroup
+        parentLayout.addView(btnDelete) // or position it how you'd like
+
+        // Pre-fill data
         etTitle.setText(task.taskTitle)
         etDescription.setText(task.taskDescription)
 
-        // Priority spinner setup
         val priorities = listOf("High", "Normal", "Low")
-        val adapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, priorities)
+        val adapter = ArrayAdapter(requireContext(), R.layout.simple_spinner_item, priorities)
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         spinnerPriority.adapter = adapter
 
-        // Set the current priority selection
         val currentIndex = priorities.indexOf(task.priority)
         spinnerPriority.setSelection(if (currentIndex >= 0) currentIndex else 1)
 
-        // Update the server when the user clicks "Save"
+        // Save updates
         btnSave.setOnClickListener {
             val newTitle = etTitle.text.toString().trim()
             val newDescription = etDescription.text.toString().trim()
@@ -221,11 +213,12 @@ class CompletedTasksFragment : Fragment() {
         dialog.show()
     }
 
-    /**
-     * In the following function, we call "update" to modify the title/description/priority of
-     * an existing completed task. We keep isCompleted as it is (1) unless you want to revert it.
-     */
     private fun updateTaskOnServer(task: Task, title: String, description: String, priority: String) {
+        /**
+         * We call 'update' to change the task details.
+         * If it's completed, we keep isCompleted=1;
+         * if we wanted, we could revert it to isCompleted=0, but that's not typical for 'Edit.'
+         */
         val userId = sharedPrefManager.getUserId()
         val call = ApiClient.apiInterface.updateTask(
             action = "update",
@@ -241,13 +234,12 @@ class CompletedTasksFragment : Fragment() {
                 if (response.isSuccessful && response.body() != null) {
                     val body = response.body()!!
                     if (body.get("success").asBoolean) {
-                        // Re-fetch completed tasks to see the updated info
                         fetchCompletedTasks()
                     } else {
                         Toast.makeText(requireContext(), body.get("message").asString, Toast.LENGTH_SHORT).show()
                     }
                 } else {
-                    Toast.makeText(requireContext(), "Error editing completed task", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(requireContext(), "Error editing task", Toast.LENGTH_SHORT).show()
                 }
             }
 
@@ -257,9 +249,47 @@ class CompletedTasksFragment : Fragment() {
         })
     }
 
-    /**
-     * In the following lines, we set _binding to null on destroy to avoid memory leaks.
-     */
+    private fun showConfirmDeleteDialog(task: Task) {
+        /**
+         * "Are you sure?" confirmation before we soft-delete the completed task.
+         */
+        android.app.AlertDialog.Builder(requireContext())
+            .setTitle("Confirm Delete")
+            .setMessage("Are you sure you want to delete this completed task?")
+            .setPositiveButton("Yes") { _, _ ->
+                deleteTask(task)
+            }
+            .setNegativeButton("No", null)
+            .show()
+    }
+
+    private fun deleteTask(task: Task) {
+        /**
+         * Actually perform the soft_delete call.
+         * This sets is_soft_deleted=1 so it won't appear anywhere (active or completed).
+         */
+        val userId = sharedPrefManager.getUserId()
+        val call = ApiClient.apiInterface.softDeleteTask("soft_delete", userId, task.id ?: 0)
+        call.enqueue(object : Callback<JsonObject> {
+            override fun onResponse(call: Call<JsonObject>, response: Response<JsonObject>) {
+                if (response.isSuccessful && response.body() != null) {
+                    val body = response.body()!!
+                    if (body.get("success").asBoolean) {
+                        fetchCompletedTasks()
+                    } else {
+                        Toast.makeText(requireContext(), body.get("message").asString, Toast.LENGTH_SHORT).show()
+                    }
+                } else {
+                    Toast.makeText(requireContext(), "Failed to delete task", Toast.LENGTH_SHORT).show()
+                }
+            }
+
+            override fun onFailure(call: Call<JsonObject>, t: Throwable) {
+                Toast.makeText(requireContext(), "Network error: ${t.message}", Toast.LENGTH_SHORT).show()
+            }
+        })
+    }
+
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null

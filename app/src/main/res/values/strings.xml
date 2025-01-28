@@ -1,6 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Common UI Strings -->
     <string name="app_name">TaskR</string>
-    <string name="edit_task">Edit Task</string>
+    <string name="ok">OK</string>
+    <string name="cancel">Cancel</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
+    <string name="save">Save</string>
+    <string name="delete">Delete</string>
+    <string name="edit">Edit</string>
+    <string name="logout">Logout</string>
+    <string name="add">Add</string>
+
+    <!-- Auth / Login / Registration -->
+    <string name="login">Login</string>
+    <string name="register">Register</string>
+    <string name="email">Email</string>
+    <string name="password">Password</string>
+    <string name="username">Username</string>
+    <string name="confirm_password">Confirm Password</string>
+
+    <!-- Tasks Screen -->
     <string name="add_task">Add Task</string>
-    <string name="mark_task_completed">Mark Task as Completed</string>
+    <string name="task_title">Task Title</string>
+    <string name="task_description">Task Description</string>
+    <string name="priority">Priority</string>
+    <string name="mark_task_completed">Mark Task As Completed</string>
+    <string name="priority_high">High</string>
+    <string name="priority_normal">Normal</string>
+    <string name="priority_low">Low</string>
+    <string name="delete_task">Delete Task</string>
+    <string name="edit_task">Edit Task</string>
+    <string name="confirm_delete_title">Confirm Delete</string>
+    <string name="confirm_delete_message">Are you sure you want to delete this completed task?</string>
+
+    <!-- Completed Tasks Screen -->
+    <string name="completed_tasks_save_button">Save</string>
+
+    <!-- Settings Screen -->
+    <string name="dark_mode">Dark Mode</string>
+    <string name="text_size">Text Size</string>
+    <string name="sample_text">Sample Text</string>
+    <string name="settings_logout_button">Logout</string>
+    <string name="dark_mode_toggled">Dark Mode: %1$s</string>
+
+    <!-- Registration Requirements -->
+    <string name="password_req_length">At least 8 characters</string>
+    <string name="password_req_upper">At least 1 uppercase letter</string>
+    <string name="password_req_special">At least 1 special character</string>
+    <string name="toggle_password_visibility">Toggle Password Visibility</string>
 </resources>
