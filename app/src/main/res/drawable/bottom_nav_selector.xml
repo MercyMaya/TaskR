@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- In the following lines, we define colors for
+     different states (e.g., checked vs. unchecked). -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- State when an item is selected/checked -->
+    <item
+        android:state_checked="true"
+        android:color="@color/bottom_nav_selected" />
+
+    <!-- Default state when item is not selected -->
+    <item
+        android:color="@color/bottom_nav_unselected" />
+</selector>

@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+In the following layout, we show a horizontal row containing
+a checkbox (to complete the task) and a vertical container for the text.
+Inside that container, we have a hidden "expanded area" that shows
+the task description + edit icon.
+-->
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:padding="8dp"
+    android:background="@drawable/bg_task_item"
+    android:layout_marginVertical="4dp">
+
+    <!-- Checkbox for marking the task as completed -->
+    <CheckBox
+        android:id="@+id/cbCompleted"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:contentDescription="@string/mark_task_completed" />
+
+    <!-- Container for Title, Priority, and the expanded area -->
+    <LinearLayout
+        android:id="@+id/llContent"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="8dp"
+        android:orientation="vertical">
+
+        <!-- Task Title -->
+        <TextView
+            android:id="@+id/tvTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Task Title"
+            android:textStyle="bold"
+            android:textSize="16sp"
+            android:textColor="@color/highContrastText"/>
+
+        <!-- Task Priority -->
+        <TextView
+            android:id="@+id/tvPriority"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Priority: Normal"
+            android:textColor="@color/highContrastText"
+            android:textSize="14sp"
+            android:paddingTop="2dp" />
+
+        <!-- Expanded area: includes description and edit icon -->
+        <LinearLayout
+            android:id="@+id/llExpandedArea"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:visibility="gone"
+            android:layout_marginTop="8dp">
+
+            <!-- Description takes up most space -->
+            <TextView
+                android:id="@+id/tvDescription"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Task Description"
+                android:textColor="@color/highContrastText"
+                android:textSize="14sp" />
+
+            <!-- Edit Icon -->
+            <ImageView
+                android:id="@+id/ivEditTask"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:src="@drawable/ic_edit"
+                android:layout_marginLeft="8dp"
+                android:contentDescription="@string/edit_task" />
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>
