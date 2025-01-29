@@ -51,6 +51,7 @@ dependencies {
     implementation(libs.gson)
     implementation(libs.androidx.room.ktx)
     implementation(libs.converter.gson)
+    implementation(libs.androidx.gridlayout)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

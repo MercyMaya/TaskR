@@ -1,27 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Layout with better spacing from edges -->
+
 <androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/settingsRoot"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/futuristicBackground"
     android:fitsSystemWindows="true"
-    android:padding="8dp"
-    android:background="@color/futuristicBackground">
+    android:padding="24dp">
 
     <!-- Dark Mode label -->
     <TextView
         android:id="@+id/tvDarkModeLabel"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:layout_marginStart="16dp"
         android:text="@string/dark_mode"
         android:textColor="@color/highContrastText"
         android:textSize="18sp"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintLeft_toLeftOf="parent"
-        android:layout_marginTop="16dp"/>
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
-    <!-- MaterialSwitch from the Material library -->
+    <!-- MaterialSwitch -->
     <com.google.android.material.materialswitch.MaterialSwitch
         android:id="@+id/switchDarkMode"
         android:layout_width="wrap_content"
@@ -29,18 +32,114 @@
         android:contentDescription="@string/dark_mode"
         android:minWidth="48dp"
         android:minHeight="48dp"
-        app:layout_constraintBaseline_toBaselineOf="@+id/tvDarkModeLabel"
-        app:layout_constraintRight_toRightOf="parent" />
+        app:layout_constraintBaseline_toBaselineOf="@id/tvDarkModeLabel"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginEnd="16dp"/>
+
+    <!-- Credits text -->
+    <TextView
+        android:id="@+id/tvCredits"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="32dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:text="@string/developed_by"
+        android:textColor="@color/highContrastText"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/switchDarkMode" />
+
+    <!-- Tip Jar prompt -->
+    <TextView
+        android:id="@+id/tvTipJarPrompt"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:text="@string/tip_prompt"
+        android:textColor="@color/highContrastText"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tvCredits" />
+
+    <!-- Grid layout for tip buttons -->
+    <androidx.gridlayout.widget.GridLayout
+        android:id="@+id/glTipButtons"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        app:columnCount="2"
+        app:rowCount="2"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tvTipJarPrompt">
+
+        <Button
+            android:id="@+id/btnTipFive"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="@string/five_dollars"
+            app:layout_columnWeight="1"
+            app:layout_rowWeight="1"
+            android:layout_margin="8dp"/>
+
+        <Button
+            android:id="@+id/btnTipTen"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="@string/ten_dollars"
+            app:layout_columnWeight="1"
+            app:layout_rowWeight="1"
+            android:layout_margin="8dp"/>
+
+        <Button
+            android:id="@+id/btnTipTwenty"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="@string/twenty_dollars"
+            app:layout_columnWeight="1"
+            app:layout_rowWeight="1"
+            android:layout_margin="8dp"/>
+
+        <Button
+            android:id="@+id/btnTipCustom"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="@string/custom"
+            app:layout_columnWeight="1"
+            app:layout_rowWeight="1"
+            android:layout_margin="8dp"/>
+    </androidx.gridlayout.widget.GridLayout>
+
+    <!-- Venmo username note -->
+    <TextView
+        android:id="@+id/tvVenmoUsername"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:text="@string/manual_venmo"
+        android:textColor="@color/highContrastText"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/glTipButtons" />
 
     <!-- Logout button -->
     <Button
         android:id="@+id/btnLogout"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:layout_marginTop="32dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
         android:text="@string/logout"
-        android:layout_marginTop="24dp"
-        app:layout_constraintTop_toBottomOf="@+id/tvDarkModeLabel"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tvVenmoUsername" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

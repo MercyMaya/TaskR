@@ -49,4 +49,14 @@
     <string name="password_req_upper">At least 1 uppercase letter</string>
     <string name="password_req_special">At least 1 special character</string>
     <string name="toggle_password_visibility">Toggle Password Visibility</string>
+    <string name="dialog_delete_button">DELETE</string>
+    <string name="dialog_delete_title">Delete</string>
+    <string name="dialog_delete_message">Are you sure? This cannot be undone.</string>
+    <string name="developed_by">App developed by Mercy Maya\nLogo by Jack Francisco</string>
+    <string name="twenty_dollars">$20</string>
+    <string name="ten_dollars">$10</string>
+    <string name="five_dollars">$5</string>
+    <string name="custom">Custom</string>
+    <string name="manual_venmo">If you prefer to send a tip manually, my Venmo user is: @Mercy-Maya</string>
+    <string name="tip_prompt">Are you finding the app useful? Show your appreciation for this completely free app by sending a tip through Venmo!</string>
 </resources>
