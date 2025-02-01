@@ -59,4 +59,5 @@
     <string name="custom">Custom</string>
     <string name="manual_venmo">If you prefer to send a tip manually, my Venmo user is: @Mercy-Maya</string>
     <string name="tip_prompt">Are you finding the app useful? Show your appreciation for this completely free app by sending a tip through Venmo!</string>
+    <string name="task_priority">Task Priority</string>
 </resources>

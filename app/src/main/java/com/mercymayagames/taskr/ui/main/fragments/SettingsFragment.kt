@@ -92,7 +92,6 @@ class SettingsFragment : Fragment() {
      */
     private fun openVenmo(amount: Double?) {
         // Basic Venmo URL approach.
-        // You could do "venmo://paycharge?txn=pay&..." but many rely on https://venmo.com/...
         val baseUrl = "https://venmo.com/u/Mercy-Maya?txn=pay"
 
         // If an amount was specified, add it to the query

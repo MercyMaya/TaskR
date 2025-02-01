@@ -13,64 +13,72 @@
         style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-    android:hint="@string/task_title"
-    app:boxStrokeWidth="2dp"
-    app:boxStrokeWidthFocused="3dp"
-    app:boxCollapsedPaddingTop="8dp"
+        android:hint="@string/task_title"
+        app:boxStrokeWidth="2dp"
+        app:boxStrokeWidthFocused="3dp"
+        app:boxCollapsedPaddingTop="8dp"
+        app:boxCornerRadiusTopStart="8dp"
+        app:boxCornerRadiusTopEnd="8dp"
+        app:boxCornerRadiusBottomStart="8dp"
+        app:boxCornerRadiusBottomEnd="8dp">
 
-    app:boxCornerRadiusTopStart="8dp"
-    app:boxCornerRadiusTopEnd="8dp"
-    app:boxCornerRadiusBottomStart="8dp"
-    app:boxCornerRadiusBottomEnd="8dp">
-
-    <com.google.android.material.textfield.TextInputEditText
-        android:id="@+id/etTitle"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:inputType="textCapSentences"
-    android:textColor="@color/highContrastText" />
-</com.google.android.material.textfield.TextInputLayout>
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/etTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="textCapSentences"
+            android:textColor="@color/highContrastText" />
+    </com.google.android.material.textfield.TextInputLayout>
 
     <!-- Description Field -->
-<com.google.android.material.textfield.TextInputLayout
-android:id="@+id/tilDescription"
-style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-android:layout_width="match_parent"
-android:layout_height="wrap_content"
-android:hint="@string/task_description"
-app:boxStrokeWidth="2dp"
-app:boxStrokeWidthFocused="3dp"
-app:boxCollapsedPaddingTop="8dp"
-app:boxCornerRadiusTopStart="8dp"
-app:boxCornerRadiusTopEnd="8dp"
-app:boxCornerRadiusBottomStart="8dp"
-app:boxCornerRadiusBottomEnd="8dp"
-android:layout_marginTop="16dp">
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/tilDescription"
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="@string/task_description"
+        app:boxStrokeWidth="2dp"
+        app:boxStrokeWidthFocused="3dp"
+        app:boxCollapsedPaddingTop="8dp"
+        app:boxCornerRadiusTopStart="8dp"
+        app:boxCornerRadiusTopEnd="8dp"
+        app:boxCornerRadiusBottomStart="8dp"
+        app:boxCornerRadiusBottomEnd="8dp"
+        android:layout_marginTop="16dp">
 
-<com.google.android.material.textfield.TextInputEditText
-    android:id="@+id/etDescription"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:lines="3"
-    android:gravity="top"
-    android:inputType="textCapSentences|textMultiLine"
-    android:textColor="@color/highContrastText" />
-</com.google.android.material.textfield.TextInputLayout>
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/etDescription"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:lines="3"
+            android:gravity="top"
+            android:inputType="textCapSentences|textMultiLine"
+            android:textColor="@color/highContrastText" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <!-- Priority Label -->
+    <TextView
+        android:id="@+id/tvPriorityLabel"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/task_priority"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:layout_marginTop="16dp" />
 
     <!-- Priority Spinner -->
-<Spinner
-android:id="@+id/spinnerPriority"
-android:layout_width="match_parent"
-android:layout_height="wrap_content"
-android:layout_marginTop="16dp"
-android:spinnerMode="dropdown" />
+    <Spinner
+        android:id="@+id/spinnerPriority"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:spinnerMode="dropdown" />
 
     <!-- Save Button -->
-<Button
-android:id="@+id/btnSave"
-android:layout_width="match_parent"
-android:layout_height="wrap_content"
-android:text="@string/save"
-android:layout_marginTop="16dp" />
+    <Button
+        android:id="@+id/btnSave"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/save"
+        android:layout_marginTop="16dp" />
 
-    </LinearLayout>
+</LinearLayout>

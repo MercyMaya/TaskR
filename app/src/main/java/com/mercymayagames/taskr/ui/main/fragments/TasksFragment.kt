@@ -1,24 +1,26 @@
 package com.mercymayagames.taskr.ui.main.fragments
 
 import android.os.Bundle
-import android.view.*
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
 import android.widget.*
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.gson.JsonObject
+import com.mercymayagames.taskr.R
 import com.mercymayagames.taskr.data.model.Task
 import com.mercymayagames.taskr.databinding.FragmentTasksBinding
 import com.mercymayagames.taskr.network.ApiClient
-import com.mercymayagames.taskr.ui.adapters.TaskAdapter
+import com.mercymayagames.taskr.ui.adapters.SectionedTaskAdapter
 import com.mercymayagames.taskr.util.SharedPrefManager
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 
 /**
- * In the following fragment, we display only active tasks (is_completed=0, is_soft_deleted=0).
- * Tasks that are completed are removed from this list. We also have an edit icon
- * to update task details (title, description, priority).
+ * TasksFragment displays tasks grouped by priority.
+ * It uses SectionedTaskAdapter to show headers (High, Normal, Low) and tasks.
  */
 class TasksFragment : Fragment() {
 
@@ -26,7 +28,9 @@ class TasksFragment : Fragment() {
     private val binding get() = _binding!!
 
     private lateinit var sharedPrefManager: SharedPrefManager
-    private lateinit var taskAdapter: TaskAdapter
+    // Instead of the old TaskAdapter, we now use SectionedTaskAdapter.
+    private lateinit var sectionedTaskAdapter: SectionedTaskAdapter
+    // A mutable list to hold fetched tasks.
     private val taskList = mutableListOf<Task>()
 
     override fun onCreateView(
@@ -34,10 +38,6 @@ class TasksFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        /**
-         * In the following lines, we inflate our fragment layout
-         * using ViewBinding generated from fragment_tasks.xml
-         */
         _binding = FragmentTasksBinding.inflate(inflater, container, false)
         return binding.root
     }
@@ -45,48 +45,37 @@ class TasksFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         sharedPrefManager = SharedPrefManager(requireContext())
 
-        // Setup RecyclerView with our custom adapter
-        // We must now pass onDeleteTaskRequested and isCompletedScreen:
-        taskAdapter = TaskAdapter(
-            tasks = taskList,
+        // Initialize the SectionedTaskAdapter with the required callbacks.
+        sectionedTaskAdapter = SectionedTaskAdapter(
             context = requireContext(),
             onTaskChecked = { task, isChecked ->
-                // Mark the task as completed or active
                 updateTaskCompletion(task, isChecked)
             },
             onEditTaskRequested = { task ->
-                // Show dialog to edit title, description, priority
                 showEditTaskDialog(task)
             },
-            onDeleteTaskRequested = {
-                /**
-                 * We do nothing here since active tasks
-                 * can't be deleted from the active screen
-                 * in this design. So it's an empty lambda.
-                 */
+            onDeleteTaskRequested = { task ->
+                // For active tasks, deletion might not be enabled.
+                // (If using a completed screen, implement deletion accordingly.)
             },
             isCompletedScreen = false
         )
 
         binding.rvTasks.layoutManager = LinearLayoutManager(requireContext())
-        binding.rvTasks.adapter = taskAdapter
+        binding.rvTasks.adapter = sectionedTaskAdapter
 
-        // Floating Action Button for adding new tasks
+        // Floating Action Button for adding new tasks.
         binding.fabAddTask.setOnClickListener {
-            // Show a dialog or a new Activity to add a task
             showAddTaskDialog()
         }
 
-        // Finally, fetch tasks from the server
+        // Fetch tasks from the server.
         fetchTasksFromServer()
     }
 
     private fun fetchTasksFromServer() {
-        /**
-         * In the following lines, we call the "fetch" action on the server
-         * which returns only tasks that are is_completed=0 & is_soft_deleted=0.
-         */
         val userId = sharedPrefManager.getUserId()
+        // Call the API to fetch active tasks.
         val call = ApiClient.apiInterface.fetchTasks("fetch", userId)
         call.enqueue(object : Callback<JsonObject> {
             override fun onResponse(call: Call<JsonObject>, response: Response<JsonObject>) {
@@ -98,7 +87,7 @@ class TasksFragment : Fragment() {
                         for (element in tasksJson) {
                             val obj = element.asJsonObject
                             val task = Task(
-                                localId = 0, // local DB usage if needed
+                                localId = 0, // For local DB usage if needed.
                                 id = obj.get("id").asInt,
                                 userId = obj.get("user_id").asInt,
                                 taskTitle = obj.get("task_title").asString,
@@ -111,29 +100,32 @@ class TasksFragment : Fragment() {
                             )
                             taskList.add(task)
                         }
-                        taskAdapter.notifyDataSetChanged()
+                        // Update the sectioned adapter with the new list.
+                        sectionedTaskAdapter.updateTasks(taskList)
                     } else {
-                        Toast.makeText(requireContext(), body.get("message").asString, Toast.LENGTH_SHORT).show()
+                        Toast.makeText(
+                            requireContext(),
+                            body.get("message").asString,
+                            Toast.LENGTH_SHORT
+                        ).show()
                     }
                 } else {
-                    Toast.makeText(requireContext(), "Failed to fetch tasks", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(requireContext(), "Failed to fetch tasks", Toast.LENGTH_SHORT)
+                        .show()
                 }
             }
 
             override fun onFailure(call: Call<JsonObject>, t: Throwable) {
-                Toast.makeText(requireContext(), "Network error: ${t.message}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    requireContext(),
+                    "Network error: ${t.message}",
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         })
     }
 
     private fun updateTaskCompletion(task: Task, isCompleted: Boolean) {
-        /**
-         * In the following lines, we call "update" on the server
-         * to set is_completed=1 if the user checks the box,
-         * or 0 if they uncheck it.
-         * Once completed, the task is automatically removed
-         * from the "fetch" results on the next refresh.
-         */
         val userId = sharedPrefManager.getUserId()
         val call = ApiClient.apiInterface.updateTask(
             action = "update",
@@ -149,41 +141,43 @@ class TasksFragment : Fragment() {
                 if (response.isSuccessful && response.body() != null) {
                     val body = response.body()!!
                     if (body.get("success").asBoolean) {
-                        // Now that the server marks it completed,
-                        // re-fetch the list (the completed task won't appear).
+                        // Re-fetch tasks so the updated state is shown.
                         fetchTasksFromServer()
                     } else {
-                        Toast.makeText(requireContext(), body.get("message").asString, Toast.LENGTH_SHORT).show()
+                        Toast.makeText(
+                            requireContext(),
+                            body.get("message").asString,
+                            Toast.LENGTH_SHORT
+                        ).show()
                     }
                 } else {
-                    Toast.makeText(requireContext(), "Error updating task", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(requireContext(), "Error updating task", Toast.LENGTH_SHORT)
+                        .show()
                 }
             }
 
             override fun onFailure(call: Call<JsonObject>, t: Throwable) {
-                Toast.makeText(requireContext(), "Network error: ${t.message}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    requireContext(),
+                    "Network error: ${t.message}",
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         })
     }
 
     private fun showAddTaskDialog() {
-        /**
-         * In the following lines, we open a dialog using 'dialog_add_task.xml'
-         * to create a new task.
-         */
-        val dialogView = LayoutInflater.from(requireContext()).inflate(
-            com.mercymayagames.taskr.R.layout.dialog_add_task, null
-        )
+        val dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_add_task, null)
         val dialog = android.app.AlertDialog.Builder(requireContext())
             .setView(dialogView)
             .create()
 
-        val etTitle = dialogView.findViewById<EditText>(com.mercymayagames.taskr.R.id.etTitle)
-        val etDescription = dialogView.findViewById<EditText>(com.mercymayagames.taskr.R.id.etDescription)
-        val spinnerPriority = dialogView.findViewById<Spinner>(com.mercymayagames.taskr.R.id.spinnerPriority)
-        val btnSave = dialogView.findViewById<Button>(com.mercymayagames.taskr.R.id.btnSave)
+        val etTitle = dialogView.findViewById<EditText>(R.id.etTitle)
+        val etDescription = dialogView.findViewById<EditText>(R.id.etDescription)
+        val spinnerPriority = dialogView.findViewById<Spinner>(R.id.spinnerPriority)
+        val btnSave = dialogView.findViewById<Button>(R.id.btnSave)
 
-        // Setup spinner with priority options
+        // Setup spinner with priority options.
         val priorities = listOf("High", "Normal", "Low")
         val adapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, priorities)
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
@@ -193,19 +187,13 @@ class TasksFragment : Fragment() {
             val title = etTitle.text.toString().trim()
             val description = etDescription.text.toString().trim()
             val priority = spinnerPriority.selectedItem.toString()
-
             addTaskToServer(title, description, priority)
             dialog.dismiss()
         }
-
         dialog.show()
     }
 
     private fun addTaskToServer(title: String, description: String, priority: String) {
-        /**
-         * In the following lines, we call "add" to create a new task on the server
-         * for the current user. Once added, we refresh the list.
-         */
         val userId = sharedPrefManager.getUserId()
         val call = ApiClient.apiInterface.addTask("add", userId, title, description, priority)
         call.enqueue(object : Callback<JsonObject> {
@@ -215,7 +203,11 @@ class TasksFragment : Fragment() {
                     if (body.get("success").asBoolean) {
                         fetchTasksFromServer()
                     } else {
-                        Toast.makeText(requireContext(), body.get("message").asString, Toast.LENGTH_SHORT).show()
+                        Toast.makeText(
+                            requireContext(),
+                            body.get("message").asString,
+                            Toast.LENGTH_SHORT
+                        ).show()
                     }
                 } else {
                     Toast.makeText(requireContext(), "Failed to add task", Toast.LENGTH_SHORT).show()
@@ -223,39 +215,35 @@ class TasksFragment : Fragment() {
             }
 
             override fun onFailure(call: Call<JsonObject>, t: Throwable) {
-                Toast.makeText(requireContext(), "Network error: ${t.message}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    requireContext(),
+                    "Network error: ${t.message}",
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         })
     }
 
     private fun showEditTaskDialog(task: Task) {
-        /**
-         * In the following lines, we show the same 'dialog_add_task.xml'
-         * but use it to edit an existing task (pre-fill data).
-         */
-        val dialogView = LayoutInflater.from(requireContext()).inflate(
-            com.mercymayagames.taskr.R.layout.dialog_add_task, null
-        )
+        val dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_add_task, null)
         val dialog = android.app.AlertDialog.Builder(requireContext())
             .setView(dialogView)
             .create()
 
-        // Pre-fill data
-        val etTitle = dialogView.findViewById<EditText>(com.mercymayagames.taskr.R.id.etTitle)
-        val etDescription = dialogView.findViewById<EditText>(com.mercymayagames.taskr.R.id.etDescription)
-        val spinnerPriority = dialogView.findViewById<Spinner>(com.mercymayagames.taskr.R.id.spinnerPriority)
-        val btnSave = dialogView.findViewById<Button>(com.mercymayagames.taskr.R.id.btnSave)
+        // Pre-fill data for editing.
+        val etTitle = dialogView.findViewById<EditText>(R.id.etTitle)
+        val etDescription = dialogView.findViewById<EditText>(R.id.etDescription)
+        val spinnerPriority = dialogView.findViewById<Spinner>(R.id.spinnerPriority)
+        val btnSave = dialogView.findViewById<Button>(R.id.btnSave)
 
         etTitle.setText(task.taskTitle)
         etDescription.setText(task.taskDescription)
 
-        // Priority spinner
         val priorities = listOf("High", "Normal", "Low")
         val adapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, priorities)
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         spinnerPriority.adapter = adapter
 
-        // Set spinner selection based on current priority
         val currentIndex = priorities.indexOf(task.priority)
         spinnerPriority.setSelection(if (currentIndex >= 0) currentIndex else 1)
 
@@ -263,19 +251,13 @@ class TasksFragment : Fragment() {
             val newTitle = etTitle.text.toString().trim()
             val newDescription = etDescription.text.toString().trim()
             val newPriority = spinnerPriority.selectedItem.toString()
-
             updateTaskOnServer(task, newTitle, newDescription, newPriority)
             dialog.dismiss()
         }
-
         dialog.show()
     }
 
     private fun updateTaskOnServer(task: Task, title: String, description: String, priority: String) {
-        /**
-         * In the following lines, we call "update" with new title/description/priority.
-         * If the task was previously completed, is_completed=1. If it was active, is_completed=0.
-         */
         val userId = sharedPrefManager.getUserId()
         val call = ApiClient.apiInterface.updateTask(
             action = "update",
@@ -293,7 +275,11 @@ class TasksFragment : Fragment() {
                     if (body.get("success").asBoolean) {
                         fetchTasksFromServer()
                     } else {
-                        Toast.makeText(requireContext(), body.get("message").asString, Toast.LENGTH_SHORT).show()
+                        Toast.makeText(
+                            requireContext(),
+                            body.get("message").asString,
+                            Toast.LENGTH_SHORT
+                        ).show()
                     }
                 } else {
                     Toast.makeText(requireContext(), "Error editing task", Toast.LENGTH_SHORT).show()
@@ -301,7 +287,11 @@ class TasksFragment : Fragment() {
             }
 
             override fun onFailure(call: Call<JsonObject>, t: Throwable) {
-                Toast.makeText(requireContext(), "Network error: ${t.message}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    requireContext(),
+                    "Network error: ${t.message}",
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         })
     }

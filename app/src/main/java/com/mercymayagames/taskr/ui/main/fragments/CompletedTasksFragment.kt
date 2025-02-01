@@ -13,18 +13,16 @@ import com.google.gson.JsonObject
 import com.mercymayagames.taskr.data.model.Task
 import com.mercymayagames.taskr.databinding.FragmentCompletedTasksBinding
 import com.mercymayagames.taskr.network.ApiClient
-import com.mercymayagames.taskr.ui.adapters.TaskAdapter
+import com.mercymayagames.taskr.ui.adapters.SectionedTaskAdapter
 import com.mercymayagames.taskr.util.SharedPrefManager
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 
 /**
- * In the following lines, we display completed tasks.
- * We add a delete icon for final 'soft delete'
- * and an optional "edit" flow that includes a delete button in the dialog.
- * We do partial updates (notifyItemRemoved / notifyItemChanged) for single changes.
- * For the initial load of all tasks, we call fetchCompletedTasks() once.
+ * In this fragment, we display completed tasks using the SectionedTaskAdapter.
+ * Tasks are grouped by priority (High, Normal, Low) with headers.
+ * Any update (mark uncompleted, edit, or delete) will rebuild the sections.
  */
 class CompletedTasksFragment : Fragment() {
 
@@ -32,7 +30,8 @@ class CompletedTasksFragment : Fragment() {
     private val binding get() = _binding!!
 
     private lateinit var sharedPrefManager: SharedPrefManager
-    private lateinit var taskAdapter: TaskAdapter
+    // Use the SectionedTaskAdapter instead of the old TaskAdapter.
+    private lateinit var sectionedTaskAdapter: SectionedTaskAdapter
     private val completedTaskList = mutableListOf<Task>()
 
     override fun onCreateView(
@@ -45,12 +44,11 @@ class CompletedTasksFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         sharedPrefManager = SharedPrefManager(requireContext())
 
-        // Setup RecyclerView for completed tasks
-        taskAdapter = TaskAdapter(
-            tasks = completedTaskList,
+        // Initialize the SectionedTaskAdapter with callbacks.
+        sectionedTaskAdapter = SectionedTaskAdapter(
             context = requireContext(),
             onTaskChecked = { task, isChecked ->
-                // If user unchecks in the completed screen => mark uncompleted
+                // In the completed screen, unchecking should mark the task as uncompleted.
                 if (!isChecked) {
                     markTaskAsUncompleted(task)
                 }
@@ -65,19 +63,18 @@ class CompletedTasksFragment : Fragment() {
         )
 
         binding.rvCompletedTasks.layoutManager = LinearLayoutManager(requireContext())
-        binding.rvCompletedTasks.adapter = taskAdapter
+        binding.rvCompletedTasks.adapter = sectionedTaskAdapter
 
-        // "Save" button is just a placeholder demonstration
+        // "Save" button (demonstration).
         binding.btnSaveCompleted.setOnClickListener {
             Toast.makeText(requireContext(), "Changes saved!", Toast.LENGTH_SHORT).show()
         }
 
-        // Initial load
+        // Initial load of completed tasks.
         fetchCompletedTasks()
     }
 
     private fun fetchCompletedTasks() {
-        // Grab completed tasks from the server
         val userId = sharedPrefManager.getUserId()
         val call = ApiClient.apiInterface.fetchCompletedTasks("fetch_completed", userId)
         call.enqueue(object : Callback<JsonObject> {
@@ -91,7 +88,6 @@ class CompletedTasksFragment : Fragment() {
                         for (element in tasksJson) {
                             val obj = element.asJsonObject
                             val task = Task(
-                                // assuming Task has 'var' fields OR we'll do partial updates with .copy
                                 localId = 0,
                                 id = obj.get("id").asInt,
                                 userId = obj.get("user_id").asInt,
@@ -105,9 +101,8 @@ class CompletedTasksFragment : Fragment() {
                             )
                             completedTaskList.add(task)
                         }
-                        // Because we reloaded the entire dataset from server
-                        // we do a full notifyDataSetChanged just once
-                        taskAdapter.notifyDataSetChanged()
+                        // Update the sectioned adapter with the new list.
+                        sectionedTaskAdapter.updateTasks(completedTaskList)
                     } else {
                         Toast.makeText(
                             requireContext(), body.get("message").asString, Toast.LENGTH_SHORT
@@ -143,12 +138,9 @@ class CompletedTasksFragment : Fragment() {
                 if (response.isSuccessful && response.body() != null) {
                     val body = response.body()!!
                     if (body.get("success").asBoolean) {
-                        // partial remove from local list
-                        val position = completedTaskList.indexOf(task)
-                        if (position != -1) {
-                            completedTaskList.removeAt(position)
-                            taskAdapter.notifyItemRemoved(position)
-                        }
+                        // Remove the task from the local list and update the adapter.
+                        completedTaskList.remove(task)
+                        sectionedTaskAdapter.updateTasks(completedTaskList)
                     } else {
                         Toast.makeText(
                             requireContext(), body.get("message").asString, Toast.LENGTH_SHORT
@@ -174,16 +166,12 @@ class CompletedTasksFragment : Fragment() {
         )
         val dialog = android.app.AlertDialog.Builder(requireContext()).setView(dialogView).create()
 
-        val etTitle =
-            dialogView.findViewById<android.widget.EditText>(com.mercymayagames.taskr.R.id.etTitle)
-        val etDescription =
-            dialogView.findViewById<android.widget.EditText>(com.mercymayagames.taskr.R.id.etDescription)
-        val spinnerPriority =
-            dialogView.findViewById<android.widget.Spinner>(com.mercymayagames.taskr.R.id.spinnerPriority)
-        val btnSave =
-            dialogView.findViewById<android.widget.Button>(com.mercymayagames.taskr.R.id.btnSave)
+        val etTitle = dialogView.findViewById<android.widget.EditText>(com.mercymayagames.taskr.R.id.etTitle)
+        val etDescription = dialogView.findViewById<android.widget.EditText>(com.mercymayagames.taskr.R.id.etDescription)
+        val spinnerPriority = dialogView.findViewById<android.widget.Spinner>(com.mercymayagames.taskr.R.id.spinnerPriority)
+        val btnSave = dialogView.findViewById<android.widget.Button>(com.mercymayagames.taskr.R.id.btnSave)
 
-        // optional "Delete" button
+        // Optional Delete button in the dialog.
         val btnDelete = android.widget.Button(requireContext()).apply {
             text = getString(com.mercymayagames.taskr.R.string.dialog_delete_button)
             setOnClickListener {
@@ -193,16 +181,13 @@ class CompletedTasksFragment : Fragment() {
         }
         (spinnerPriority.parent as ViewGroup).addView(btnDelete)
 
-        // Pre-fill
+        // Pre-fill fields.
         etTitle.setText(task.taskTitle)
         etDescription.setText(task.taskDescription)
-
         val priorities = listOf("High", "Normal", "Low")
-        val adapter =
-            ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, priorities)
+        val adapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, priorities)
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         spinnerPriority.adapter = adapter
-
         val currentIndex = priorities.indexOf(task.priority)
         spinnerPriority.setSelection(if (currentIndex >= 0) currentIndex else 1)
 
@@ -220,9 +205,7 @@ class CompletedTasksFragment : Fragment() {
         task: Task, title: String, description: String, priority: String
     ) {
         val userId = sharedPrefManager.getUserId()
-        // preserve isCompleted as it is, or you can do (task.isCompleted)?1:0
         val isCompleted = if (task.isCompleted) 1 else 0
-
         val call = ApiClient.apiInterface.updateTask(
             "update",
             userId,
@@ -237,35 +220,24 @@ class CompletedTasksFragment : Fragment() {
                 if (response.isSuccessful && response.body() != null) {
                     val body = response.body()!!
                     if (body.get("success").asBoolean) {
-                        // partial item update in local list with copy()
-                        val position = completedTaskList.indexOf(task)
-                        if (position != -1) {
-                            // old item is completedTaskList[position]
-                            val oldItem = completedTaskList[position]
-
-                            // create a new updated item by copying oldItem and overriding fields
-                            val updatedItem = oldItem.copy(
+                        // Update the task in our local list.
+                        val index = completedTaskList.indexOf(task)
+                        if (index != -1) {
+                            val updatedTask = task.copy(
                                 taskTitle = title,
                                 taskDescription = description,
                                 priority = priority
-                                // any other field changes
                             )
-
-                            // replace in the list
-                            completedTaskList[position] = updatedItem
-
-                            // notify the adapter that this particular item changed
-                            taskAdapter.notifyItemChanged(position)
+                            completedTaskList[index] = updatedTask
+                            sectionedTaskAdapter.updateTasks(completedTaskList)
                         }
-
                     } else {
                         Toast.makeText(
                             requireContext(), body.get("message").asString, Toast.LENGTH_SHORT
                         ).show()
                     }
                 } else {
-                    Toast.makeText(requireContext(), "Error editing task", Toast.LENGTH_SHORT)
-                        .show()
+                    Toast.makeText(requireContext(), "Error editing task", Toast.LENGTH_SHORT).show()
                 }
             }
 
@@ -282,7 +254,9 @@ class CompletedTasksFragment : Fragment() {
             .setMessage(getString(com.mercymayagames.taskr.R.string.dialog_delete_message))
             .setPositiveButton(getString(com.mercymayagames.taskr.R.string.yes)) { _, _ ->
                 deleteTask(task)
-            }.setNegativeButton(getString(com.mercymayagames.taskr.R.string.no), null).show()
+            }
+            .setNegativeButton(getString(com.mercymayagames.taskr.R.string.no), null)
+            .show()
     }
 
     private fun deleteTask(task: Task) {
@@ -293,12 +267,9 @@ class CompletedTasksFragment : Fragment() {
                 if (response.isSuccessful && response.body() != null) {
                     val body = response.body()!!
                     if (body.get("success").asBoolean) {
-                        // partial remove
-                        val position = completedTaskList.indexOf(task)
-                        if (position != -1) {
-                            completedTaskList.removeAt(position)
-                            taskAdapter.notifyItemRemoved(position)
-                        }
+                        // Remove the task from our local list and update the adapter.
+                        completedTaskList.remove(task)
+                        sectionedTaskAdapter.updateTasks(completedTaskList)
                     } else {
                         Toast.makeText(
                             requireContext(), body.get("message").asString, Toast.LENGTH_SHORT
