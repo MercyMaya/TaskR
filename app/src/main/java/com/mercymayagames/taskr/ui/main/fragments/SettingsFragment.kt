@@ -46,6 +46,18 @@ class SettingsFragment : Fragment() {
             requireActivity().recreate()
         }
 
+        binding.btnInstagram.setOnClickListener {
+            // For debugging, you can uncomment the toast:
+            // Toast.makeText(requireContext(), "Instagram clicked", Toast.LENGTH_SHORT).show()
+
+            val instagramUrl = "https://www.instagram.com/stellarmassjack"
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(instagramUrl))
+            // Use a chooser to force an app selection
+            val chooser = Intent.createChooser(intent, "Open Instagram with")
+            startActivity(chooser)
+        }
+
+
         // Logout button
         binding.btnLogout.setOnClickListener {
             sharedPrefManager.logout()

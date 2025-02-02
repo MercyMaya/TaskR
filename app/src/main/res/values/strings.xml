@@ -52,7 +52,9 @@
     <string name="dialog_delete_button">DELETE</string>
     <string name="dialog_delete_title">Delete</string>
     <string name="dialog_delete_message">Are you sure? This cannot be undone.</string>
-    <string name="developed_by">App developed by Mercy Maya\nLogo by Jack Francisco</string>
+    <string name="developed_by_mercy">Developed by Mercy Maya</string>
+    <string name="follow_jack">App logo created by Jack Francisco</string>
+    <string name="instagram_profile">Open Jack\'s Instagram profile</string>
     <string name="twenty_dollars">$20</string>
     <string name="ten_dollars">$10</string>
     <string name="five_dollars">$5</string>
